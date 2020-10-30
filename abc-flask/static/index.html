@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" href="data:;base64,iVBORw0KGgo=">
+	<title>stock</title>
+    <style>
+    #container {
+	max-height: 800px;
+	height: 75vh;
+}
+/* Conflict with Bootstrap, not needed after v7.0.1 */
+.highcharts-bindings-wrapper * {
+	box-sizing: content-box;
+}
+    .news {
+    height : 50px;
+    width :  900px;
+}
+.text{
+   overflow: hidden;
+   text-overflow: ellipsis;
+   display: -webkit-box;
+   line-height: 16px;
+   max-height: 80px;
+   /* The number of lines to be displayed */
+   -webkit-line-clamp: 5;
+   -webkit-box-orient: vertical;
+}
+.label {
+    width:320px;
+    background-color:#ccc;
+    font-weight:bold;
+}
+.info{
+    background-color:#f1f1f1;
+    text-align:center;
+}
+tr {
+  border: 1px solid #ddd;
+}
+td {
+  border: 1px solid #ddd;
+  width :900px;
+  //height: 90px;
+  overflow: hidden;
+ text-overflow: ellipsis;
+ //white-space: nowrap;
+}
+
+body {font-family: Arial;}
+
+/* Style the tab */
+.tab {
+  overflow: hidden;
+  border: 1px solid #ccc;
+  background-color: #f1f1f1;
+}
+
+/* Style the buttons inside the tab */
+.tab button {
+  background-color: inherit;
+  float: left;
+  border: none;
+  outline: none;
+  cursor: pointer;
+  padding: 14px 16px;
+  transition: 0.3s;
+  font-size: 17px;
+}
+
+/* Create an active/current tablink class */
+.tab button.active {
+  background-color: #ccc;
+}
+
+/* Style the tab content */
+.tabcontent {
+  display: none;
+  padding: 6px 12px;
+}
+</style>
+
+</head>
+<body style="background-color:#415BC5">
+<script>
+
+function showMainTab(id){
+document.getElementById('resultTable').style.visibility = "visible";
+}
+
+function search(stockName) {
+event.preventDefault();
+
+var stock1 = document.getElementById('stockName').value;
+var url1 = "/search/"+stock1;
+var call1 = new XMLHttpRequest();
+
+call1.onreadystatechange = function() {
+    if (this.readyState == 4 && this.status == 200) {
+    var result_obj = JSON.parse(this.responseText);
+    getData1(result_obj);
+    }
+};
+call1.open("GET",url1,true);
+call1.send();
+}
+
+function setErrorMessage(data)
+{
+	setValue("errorMessage","Error:No record has been found. Please enter valid symbol.");
+	document.getElementById("errorMessage").style.display = "block";
+}
+
+function getData1(data){
+if(!data)
+{
+	setErrorMessage();
+	return;
+}
+if(data.detail == "Not found.")
+{
+    setErrorMessage();
+    return;
+}
+
+setValue("companyName", data.name);
+setValue("description", data.description);
+setValue("stockTicker", data.ticker);
+setValue("stockExchange", data.exchangeCode);
+setValue("startDate", data.startDate);
+showMainTab();
+openTab(event,'CompanyOutlook');
+document.getElementById("defaultOpen").click();
+}
+
+function find(stockName) {
+event.preventDefault();
+
+var stock2 = document.getElementById('stockName').value;
+var url2 = "/find/"+stock2;
+var call2 = new XMLHttpRequest();
+
+call2.onreadystatechange = function() {
+    if (this.readyState == 4 && this.status == 200) {
+    var result_obj1 = JSON.parse(this.responseText);
+    getData2(result_obj1);
+    }
+};
+call2.open("GET",url2,true);
+call2.send();
+}
+
+function getData2(data){
+
+setValue("TickerSymbol", data[0].ticker);
+setValue("TradingDay", data[0].timestamp.slice(0,10));
+setValue("prevClose", data[0].prevClose);
+setValue("openPrice", data[0].open);
+setValue("highPrice", data[0].high);
+setValue("lowPrice", data[0].low);
+setValue("lastPrice", data[0].last);
+setValue("change", (data[0].last - data[0].prevClose).toFixed(2));
+var c = (data[0].last - data[0].prevClose).toFixed(2);
+if(c > 0){
+setImage("arrow1","https://csci571.com/hw/hw6/images/GreenArrowUp.jpg");
+}
+else{
+setImage("arrow1","https://csci571.com/hw/hw6/images/RedArrowDown.jpg");
+}
+setValue("changePercentage", ((((data[0].last-data[0].prevClose)/data[0].prevClose))*100).toFixed(2));
+var d = ((((data[0].last-data[0].prevClose)/data[0].prevClose))*100).toFixed(2);
+if(d > 0){
+setImage("arrow2","https://csci571.com/hw/hw6/images/GreenArrowUp.jpg");
+}
+else{
+setImage("arrow2","https://csci571.com/hw/hw6/images/RedArrowDown.jpg");
+}
+setValue("sharesTraded", data[0].volume);
+}
+
+function news(stockName) {
+event.preventDefault();
+
+var stock3 = document.getElementById('stockName').value;
+var url3 = "/news/"+stock3;
+var call3 = new XMLHttpRequest();
+
+call3.onreadystatechange = function() {
+    if (this.readyState == 4 && this.status == 200) {
+    var result_obj = JSON.parse(this.responseText);
+    getData3(result_obj);
+    }
+};
+call3.open("GET",url3,true);
+call3.send();
+}
+
+function setErrorMessage(data)
+{
+	setValue("errorMessage","Error:No record has been found. Please enter valid symbol.");
+	document.getElementById("errorMessage").style.display = "block";
+}
+
+function getData3(data){
+if(!data)
+{
+	setErrorMessage();
+	return;
+}
+if(data.detail == "Not found.")
+{
+    setErrorMessage();
+    return;
+}
+
+setImage("image0", data.articles[0].urlToImage);
+setValue("Ntitle0", data.articles[0].title);
+setValue("PubDate0", data.articles[0].publishedAt.slice(0,10).split('-').reverse().join('/'));
+setLink("link0", data.articles[0].url);
+
+setImage("image1", data.articles[1].urlToImage);
+setValue("Ntitle1", data.articles[1].title);
+setValue("PubDate1", (data.articles[1].publishedAt).slice(0,10).split('-').reverse().join('/'));
+setLink("link1", data.articles[1].url);
+
+setImage("image2", data.articles[2].urlToImage);
+setValue("Ntitle2", data.articles[2].title);
+setValue("PubDate2", (data.articles[2].publishedAt).slice(0,10).split('-').reverse().join('/'));
+setLink("link2", data.articles[2].url);
+
+setImage("image3", data.articles[3].urlToImage);
+setValue("Ntitle3", data.articles[3].title);
+setValue("PubDate3", (data.articles[3].publishedAt).slice(0,10).split('-').reverse().join('/'));
+setLink("link3", data.articles[3].url);
+
+setImage("image4", data.articles[4].urlToImage);
+setValue("Ntitle4", data.articles[4].title);
+setValue("PubDate4", (data.articles[4].publishedAt).slice(0,10).split('-').reverse().join('/'));
+setLink("link4", data.articles[4].url);
+}
+
+function setImage(id, value){
+document.getElementById(id).src = value;
+}
+
+function setLink(id, value){
+document.getElementById(id).href = value;
+}
+
+function setValue(id, value){
+var ele = document.getElementById(id);
+if(ele){
+    ele.innerHTML = value;
+        }
+}
+
+function charts(stockName) {
+event.preventDefault();
+
+var stock4 = document.getElementById('stockName').value;
+var url4 = "/charts/"+stock4;
+var call4 = new XMLHttpRequest();
+
+call4.onreadystatechange = function() {
+    if (this.readyState == 4 && this.status == 200) {
+    var result_obj = JSON.parse(this.responseText);
+    getData4(result_obj,stock4);
+    }
+};
+call4.open("GET",url4,true);
+call4.send();
+}
+
+function setErrorMessage(data)
+{
+	setValue("errorMessage","Error: No record has been found. Please enter valid symbol.");
+	document.getElementById("errorMessage").style.display = "block";
+}
+
+function getData4(data,stock4){
+if(!data)
+{
+	setErrorMessage();
+	return;
+}
+if(data.detail == "Not found.")
+{
+    setErrorMessage();
+    return;
+}
+var utc = new Date().toJSON().slice(0,10);
+var points1 = [];
+var points2 = [];
+var strzero = "0";
+
+for(var i=0;i<data.length; i++){
+    //points1.push([Date.UTC(...((data[i].date).slice(0,10)).replace(/-/g,",").split(',')),data[i].close]);
+    var yr = (data[i].date).slice(0,4);
+    var mm = (data[i].date).slice(5,7);
+    var integer = parseInt(mm, 10);
+    integer = integer - 1;
+    var month = strzero.concat(integer);
+    var dd = (data[i].date).slice(8,10);
+    var temp = yr+','+month+','+dd;
+    points1.push([(Date.UTC(...temp.split(','))),data[i].close]);
+    }
+for(var i=0;i<data.length; i++){
+    //points2.push([Date.UTC(...((data[i].date).slice(0,10)).replace(/-/g,",").split(',')),data[i].volume]);
+    var yr = (data[i].date).slice(0,4);
+    var mm = (data[i].date).slice(5,7);
+    var integer = parseInt(mm, 10);
+    integer = integer - 1;
+    var month = strzero.concat(integer);
+    var dd = (data[i].date).slice(8,10);
+    var temp = yr+','+month+','+dd;
+   points2.push([(Date.UTC(...temp.split(','))),data[i].volume]);
+    }
+
+
+    Highcharts.stockChart('container', {
+         title: {
+            text: 'Stock Price '+stock4+' '+utc
+        },
+
+        subtitle: {
+            text: '<a style="color:blue;text-decoration:underline;" href="https://api.tiingo.com/">Source: Tiingo</a>'
+        },
+         plotOptions: {
+            series: {
+                pointWidth: 2
+            }
+           },
+
+        yAxis: [{
+            title: {
+            text: 'Stock Price',
+            },
+            opposite: false,
+            },
+            {
+            title:{
+            text:'Volume',
+
+            },
+            opposite: true,
+            }],
+
+            rangeSelector: {
+            buttons: [{
+                type: 'day',
+                count: 7,
+                text: '7d'
+            }, {
+                type: 'day',
+                count: 15,
+                text: '15d'
+            }, {
+                type: 'month',
+                count: 1,
+                text: '1m'
+            }, {
+                type: 'month',
+                count: 3,
+                text: '3m'
+            },  {
+                type: 'month',
+                count: 6,
+                text: '6m'
+            }],
+            selected: 1,
+            inputEnabled: false
+        },
+
+        series: [{
+            type: 'area',
+            id: 'stock-price',
+            name: 'Stock Price',
+            data: points1,
+            yAxis: 0
+        }, {
+            type: 'column',
+            id: 'volume',
+            name: 'Volume',
+            data: points2,
+            yAxis: 1
+        }],
+
+    });
+
+}
+
+function clearData(){
+document.getElementById("stockName").value = "";
+document.getElementById("errorMessage").style.display = "none";
+document.getElementById('resultTable').style.visibility = "hidden";
+document.getElementById('CompanyOutlook').style.display = "none";
+document.getElementById('CompanySummary').style.display = "none";
+document.getElementById('Charts').style.display = "none";
+document.getElementById('LatestNews').style.display = "none";
+}
+
+function openTab(evt, tabName) {
+  var i, tabcontent, tablinks;
+  tabcontent = document.getElementsByClassName("tabcontent");
+  for (i = 0; i < tabcontent.length; i++) {
+    tabcontent[i].style.display = "none";
+  }
+  tablinks = document.getElementsByClassName("tablinks");
+  for (i = 0; i < tablinks.length; i++) {
+    tablinks[i].className = tablinks[i].className.replace("active", "");
+  }
+  document.getElementById(tabName).style.display = "block";
+  evt.currentTarget.className += " active";
+}
+
+</script>
+
+
+<div style="width:900px;height:280px;position:relative; left:260px; top:25px;background-color:#f1f1f1;border-radius: 5px;">
+	<form onsubmit=" search(stockName); find(stockName); news(stockName); charts(stockName);">
+        <div style="position:relative;text-align:center;top:60px;font-size:35px;font-family:Arial;font-weight:bold">Stock Search</div>
+        <div>
+        <span style="position:relative;left:250px;top:85px">Enter Stock Ticker Symbol</span>
+        <span style="color:red;position:relative;left:250px;top:85px;">*</span>
+            <input style="position:relative;left:270px;top:85px;border: 0px solid;width:150px;height:20px;border-radius: 5px;" type="text" id="stockName" name="stock" required/>
+    </div>
+        <div>
+            <button type="Submit" style="position:relative;left:320px;top:130px;width:100px;height:30px;border: 0px solid;background-color:white;border-radius: 5px;">search</button>
+            <button onclick="clearData()" style="position:relative;left:370px;top:130px;width:100px;height:30px;border: 0px solid;background-color:white;border-radius: 5px;">clear</button>
+        </div>
+    </form>
+</div>
+<hr style="position:absolute;top:320px;left: 265px;width:900px;color:white;">
+<div class="tab" id="resultTable" style="position:relative;top:60px;margin-left:260px; width:900px; visibility:hidden">
+            <button class="tablinks" onclick="openTab(event,'CompanyOutlook')" id="defaultOpen">Company Outlook</button>
+
+            <button class="tablinks" onclick="openTab(event,'CompanySummary')">Company Summary</button>
+
+            <button class="tablinks" onclick="openTab(event,'Charts')">Charts</button>
+
+            <button class="tablinks" onclick="openTab(event,'LatestNews')">Latest News</button>
+</div>
+<div id="CompanyOutlook" class="tabcontent" style="position:relative;width:900px;left:250px; top:100px;">
+    <table style="border-collapse:collapse;">
+        <tr>
+            <td class="label">Company Name</td>
+            <td class="info"><span id="companyName"></span></td>
+        </tr>
+        <tr>
+            <td class="label">Stock Ticker Symbol</td>
+            <td class="info"><span id="stockTicker"></span></td>
+        </tr>
+        <tr>
+            <td class="label">Stock Exchange Code</td>
+            <td class="info"><span id="stockExchange"></span></td>
+        </tr>
+        <tr>
+            <td class="label">Company Start Date</td>
+            <td class="info"><span id="startDate"></span></td>
+        </tr>
+        <tr>
+            <td class="label">Description</td>
+            <td class="info"><div class="text" id="description">
+    </div>
+                <!--<span id="description" ></span></td>-->
+        </tr>
+    </table>
+</div>
+<div id="CompanySummary" class="tabcontent" style="position:relative;width:900px;left:250px; top:100px;table-layout:fixed;">
+    <table style="border-collapse:collapse;">
+        <tr>
+            <td class="label">Stock Ticker Symbol</td>
+            <td class="info"><span id="TickerSymbol"></span></td>
+        </tr>
+        <tr>
+            <td class="label">Trading Day</td>
+            <td class="info"><span id="TradingDay"></span></td>
+        </tr>
+        <tr>
+            <td class="label">Previous Closing Price</td>
+            <td class="info"><span id="prevClose"></span></td>
+        </tr>
+        <tr>
+            <td class="label">Opening Price</td>
+            <td class="info"><span id="openPrice"></span></td>
+        </tr>
+        <tr>
+            <td class="label">High Price</td>
+            <td class="info"><span id="highPrice"></span></td>
+        </tr>
+        <tr>
+            <td class="label">Low Price</td>
+            <td class="info"><span id="lowPrice"></span></td>
+        </tr>
+        <tr>
+            <td class="label">Last Price</td>
+            <td class="info"><span id="lastPrice"></span></td>
+        </tr>
+        <tr>
+            <td class="label">Change</td>
+
+            <td class="info"><span id="change"></span>
+                <img id="arrow1" src="" height=15 width=15 />
+
+
+            </td>
+
+        </tr>
+        <tr>
+            <td class="label">Change Percent</td>
+            <td class="info"><span id="changePercentage"></span>
+             <img id="arrow2" src="" height=15 width=15 />
+
+            </td>
+        </tr>
+        <tr>
+            <td class="label">Number of Shares Traded</td>
+            <td class="info"><span id="sharesTraded"></span></td>
+        </tr>
+    </table>
+</div>
+
+<div id="LatestNews" class="tabcontent" style="position:relative;width:900px;left:250px; top:100px;">
+
+            <div class="info" style="height:90px;border-radius:3px;">
+                <img id="image0" src="" height=65 width=65 style="position:absolute;left:26px;top:18px;">
+                <span id="Ntitle0" style="font-weight:bold;position:absolute;font-size:13px;top:18px;left:100px;"></span><br/>
+                <small style="font-size:13px;position:absolute;top:35px;left:100px;">published Date: </small>
+                <span id="PubDate0" style="font-size:12px;position:absolute;top:35px;left:200px;"></span><br/>
+                <a id="link0" style="font-size:12px;position:absolute;left:100px;top:52px;" href="">See Original Post</a></div>
+
+            <div class="info" style="position:relative;height:90px;top:30px;border-radius:3px;">
+                <img id="image1" src="" height=65 width=65 style="position:absolute;left:15px;top:12px;">
+                <span id="Ntitle1" style="font-weight:bold;position:absolute;font-size:13px;top:12px;left:89px;"></span><br/>
+                <small style="font-size:13px;position:absolute;top:31px;left:89px;">published Date: </small>
+                <span id="PubDate1" style="font-size:12px;position:absolute;top:31px;left:189px;"></span><br/>
+                <a id="link1" style="font-size:12px;position:absolute;left:89px;top:48px;" href="">See Original Post</a></div>
+
+            <div class="info" style="position:relative;height:90px;top:60px;border-radius:3px;">
+                <img id="image2" src="" height=65 width=65 style="position:absolute;left:15px;top:12px;">
+                <span id="Ntitle2" style="font-weight:bold;position:absolute;font-size:13px;top:12px;left:89px;"></span><br/>
+                <small style="font-size:13px;position:absolute;top:31px;left:89px;">published Date: </small>
+                <span id="PubDate2" style="font-size:12px;position:absolute;top:31px;left:189px;"></span><br/>
+                <a id="link2" style="font-size:12px;position:absolute;left:89px;top:48px;" href="">See Original Post</a></div>
+
+            <div class="info" style="position:relative;height:90px;top:90px;border-radius:3px;">
+                <img id="image3" src="" height=65 width=65 style="position:absolute;left:15px;top:12px;">
+                <span id="Ntitle3" style="font-weight:bold;position:absolute;font-size:13px;top:12px;left:89px;"></span><br/>
+                <small style="font-size:13px;position:absolute;top:31px;left:89px;">published Date: </small>
+                <span id="PubDate3" style="font-size:12px;position:absolute;top:31px;left:189px;"></span><br/>
+                <a id="link3" style="font-size:12px;position:absolute;left:89px;top:48px;" href="">See Original Post</a></div>
+
+            <div class="info" style="position:relative;height:90px;top:120px;border-radius:3px;">
+                <img id="image4" src="" height=65 width=65 style="position:absolute;left:15px;top:12px;">
+                <span id="Ntitle4" style="font-weight:bold;position:absolute;font-size:13px;top:12px;left:89px;"></span><br/>
+                <small style="font-size:13px;position:absolute;top:31px;left:89px;">published Date: </small>
+                <span id="PubDate4" style="font-size:12px;position:absolute;top:31px;left:189px;"></span><br/>
+                <a id="link4" style="font-size:12px;position:absolute;left:89px;top:48px;" href="">See Original Post</a></div>
+
+</div>
+<div id="Charts" class="tabcontent" style="position:relative;width:900px;left:250px; top:100px;">
+    <div id="container" class="chart" style="height: 400px; min-width: 310px"></div>
+
+    <link rel="stylesheet" type="text/css" href="https://code.highcharts.com/css/stocktools/gui.css">
+<link rel="stylesheet" type="text/css" href="https://code.highcharts.com/css/annotations/popup.css">
+
+
+<script src="https://code.highcharts.com/stock/highstock.js"></script>
+<script src="https://code.highcharts.com/stock/modules/data.js"></script>
+    <script src="https://code.highcharts.com/stock/modules/exporting.js"></script>
+<script src="https://code.highcharts.com/stock/modules/export-data.js"></script>
+</div>
+
+<div>
+    <span id="errorMessage" style="display:none;position:absolute;top:400px;font-weight:bold;font-family:Arial;left:500px;width:1000px;"></span>
+</div>
+</body>
+</html>
+
